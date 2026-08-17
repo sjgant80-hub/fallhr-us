@@ -70,19 +70,22 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
     'llama-3b':  { id: 'Llama-3.2-3B-Instruct-q4f16_1-MLC',   size: '~2GB',   label: '3B · balanced · default · most laptops' },
     'qwen-7b':   { id: 'Qwen2.5-7B-Instruct-q4f16_1-MLC',     size: '~5GB',   label: '7B · capable · needs decent GPU (M-series Mac / 8GB+ VRAM)' },
     'llama-8b':  { id: 'Llama-3.1-8B-Instruct-q4f16_1-MLC',   size: '~5GB',   label: '8B · common · needs decent GPU' },
-    'llama-70b': { id: 'Llama-3.1-70B-Instruct-q4f16_1-MLC',  size: '~40GB',  label: '70B · frontier · needs serious GPU + 64GB+ RAM' }};
+    'llama-70b': { id: 'Llama-3.1-70B-Instruct-q4f16_1-MLC',  size: '~40GB',  label: '70B · frontier · needs serious GPU + 64GB+ RAM' },
+  };
   const DEFAULT_MODEL = 'llama-3b';
 
   const T3_PROVIDERS = {
     anthropic: { label: 'Anthropic Claude', models: ['claude-sonnet-4-5','claude-opus-4-7','claude-haiku-4-5'], default: 'claude-sonnet-4-5', url: 'https://api.anthropic.com/v1/messages' },
     openai:    { label: 'OpenAI',           models: ['gpt-4o','gpt-4o-mini','o1-mini'],                          default: 'gpt-4o-mini',      url: 'https://api.openai.com/v1/chat/completions' },
-    google:    { label: 'Google Gemini',    models: ['gemini-1.5-pro','gemini-1.5-flash','gemini-2.0-flash-exp'], default: 'gemini-1.5-flash', url: 'https://generativelanguage.googleapis.com/v1beta/models/' }};
+    google:    { label: 'Google Gemini',    models: ['gemini-1.5-pro','gemini-1.5-flash','gemini-2.0-flash-exp'], default: 'gemini-1.5-flash', url: 'https://generativelanguage.googleapis.com/v1beta/models/' },
+  };
 
   // ─── State ───────────────────────────────────────────────────────
   const STATE = {
     config: loadConfig(),
     ai: { ready: false, loading: false, progress: 0, engine: null, model: null },
-    mesh: { active: false, peers: new Map(), bc: null, signal: null }};
+    mesh: { active: false, peers: new Map(), bc: null, signal: null },
+  };
 
   function loadConfig() {
     try { return JSON.parse(localStorage.getItem('fall-kit.config') || '{}'); }
@@ -149,7 +152,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
     if (tier === 'T2' && STATE.ai.ready && STATE.ai.engine) {
       const r = await STATE.ai.engine.chat.completions.create({
         messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMsg }],
-        max_tokens: maxTokens});
+        max_tokens: maxTokens,
+      });
       return r.choices[0].message.content;
     }
     if (tier === 'T3' && STATE.config.api_key && STATE.config.api_provider) {
@@ -166,7 +170,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
       const r = await fetch(T3_PROVIDERS.anthropic.url, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model, max_tokens: maxTokens, system: sys, messages: [{ role: 'user', content: msg }] })});
+        body: JSON.stringify({ model, max_tokens: maxTokens, system: sys, messages: [{ role: 'user', content: msg }] }),
+      });
       if (!r.ok) throw new Error('Anthropic ' + r.status + ': ' + (await r.text()).slice(0, 200));
       const j = await r.json();
       return j.content[0].text;
@@ -175,7 +180,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
       const r = await fetch(T3_PROVIDERS.openai.url, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'Authorization': 'Bearer ' + key },
-        body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'system', content: sys }, { role: 'user', content: msg }] })});
+        body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'system', content: sys }, { role: 'user', content: msg }] }),
+      });
       if (!r.ok) throw new Error('OpenAI ' + r.status);
       const j = await r.json();
       return j.choices[0].message.content;
@@ -184,7 +190,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
       const r = await fetch(T3_PROVIDERS.google.url + model + ':generateContent?key=' + encodeURIComponent(key), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: sys + '\n\n---\n\n' + msg }] }], generationConfig: { maxOutputTokens: maxTokens } })});
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: sys + '\n\n---\n\n' + msg }] }], generationConfig: { maxOutputTokens: maxTokens } }),
+      });
       if (!r.ok) throw new Error('Google ' + r.status);
       const j = await r.json();
       return j.candidates[0].content.parts[0].text;
@@ -425,7 +432,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{pa
     openMint: openMint,  // v1.2 · launch kcc-mint with this seed prefilled as parent
     MODELS: WEBLLM_MODELS,
     PROVIDERS: T3_PROVIDERS,
-    state: STATE};
+    state: STATE,
+  };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -478,7 +486,8 @@ const RULES={
   niEmployerRate:0.138,
   rightToWorkRetentionYears:2,
   noticeStatutoryMinWeeksOver1Yr:1, // +1 per year of service to max 12
-  RIFQualifyingYears:2};
+  RIFQualifyingYears:2,
+};
 
 let state={active:'dashboard',firm:null,employees:[],holiday:[],absence:[],reviews:[],contracts:[],complianceChecks:[],audit:[],
   ui:{chat:[]},settings:{anthropicKey:'',auditChain:true}};
@@ -530,32 +539,34 @@ function renderContracts(v){v.innerHTML=`<div class="section-h"><h2>Contracts</h
 
 function renderCompliance(v){const checks=[
   {id:'s1Statement',name:'S.1 written statement of particulars (day 1)',cat:'Statutory',desc:'ERA 1996 s.1. Day-one right since 6 Apr 2020. Tribunal award 2-4 weeks pay if missing.'},
-  {id:'rtwAll',name:'Right to Work checks complete for all employees',cat:'Immigration',desc:'Immigration, Asylum and Nationality Act 2006. Civil penalty up to TBA per illegal worker. Retain copies for duration + 2 years.'},
-  {id:'autoEnrolPension',name:'Auto-enrolment pension scheme in place',cat:'Pensions',desc:'Pensions Act 2008. Mandatory for eligible jobholders (22+ earning TBAk+). Employer 3% min, employee 5% min. TPR enforcement.'},
+  {id:'rtwAll',name:'Right to Work checks complete for all employees',cat:'Immigration',desc:'Immigration, Asylum and Nationality Act 2006. Civil penalty up to $45,000 per illegal worker. Retain copies for duration + 2 years.'},
+  {id:'autoEnrolPension',name:'Auto-enrolment pension scheme in place',cat:'Pensions',desc:'Pensions Act 2008. Mandatory for eligible jobholders (22+ earning $10k+). Employer 3% min, employee 5% min. TPR enforcement.'},
   {id:'workingTimeOptOut',name:'Working Time opt-outs documented (if >48hrs)',cat:'Working Time',desc:'WTR 1998 reg 4(1). 48-hr weekly maximum unless opted-out in writing. Records retained 2 years.'},
   {id:'gdprPrivacyNotice',name:'Employee privacy notice (US CCPA Art.13)',cat:'Data',desc:'Issue at hire. Lawful basis usually contract performance (Art.6(1)(b)) and legitimate interest. ICO registration if processing personal data.'},
   {id:'disciplinaryPolicy',name:'Disciplinary & grievance procedure (DOL Code)',cat:'Conduct',desc:'DOL Code of Practice on Disciplinary and Grievance Procedures. Tribunal awards uplifted up to 25% for unreasonable non-compliance.'},
   {id:'equalityPolicy',name:'Equality, diversity and anti-harassment policy',cat:'Equality',desc:'Equality Act 2010. 9 protected characteristics. Worker Protection Act 2023: positive duty to prevent sexual harassment from 26 Oct 2024.'},
   {id:'healthSafety',name:'Health & Safety policy (if 5+ employees)',cat:'H&S',desc:'Health and Safety at Work Act 1974. Written H&S policy required if 5+ employees. Risk assessments documented.'},
-  {id:'elInsurance',name:'Employers Liability insurance (TBAM min)',cat:'Insurance',desc:'Employers Liability (Compulsory Insurance) Act 1969. Certificate displayed. Penalty up to TBA/day uninsured.'},
+  {id:'elInsurance',name:'Employers Liability insurance ($5M min)',cat:'Insurance',desc:'Employers Liability (Compulsory Insurance) Act 1969. Certificate displayed. Penalty up to $2,500/day uninsured.'},
   {id:'paye',name:'PAYE/RTI registered with HMRC',cat:'Payroll',desc:'Real Time Information. FPS by/on payday. EPS by 19th. W-2 by 31 May. P11D by 6 Jul.'},
-  {id:'minimumWage',name:'National Minimum/Living Wage compliance',cat:'Pay',desc:'NMW Act 1998. NLW TBA (age 21+) from Apr 2024. Naming and shaming for breaches.'},
-  {id:'genderPayGap',name:'Gender pay gap reporting (if 250+ employees)',cat:'Equality',desc:'Equality Act 2010 (Gender Pay Gap Information) Regulations 2017. Annual snapshot 5 April, publish by 4 April following year.'}];
+  {id:'minimumWage',name:'National Minimum/Living Wage compliance',cat:'Pay',desc:'NMW Act 1998. NLW $11.44/hr (age 21+) from Apr 2024. Naming and shaming for breaches.'},
+  {id:'genderPayGap',name:'Gender pay gap reporting (if 250+ employees)',cat:'Equality',desc:'Equality Act 2010 (Gender Pay Gap Information) Regulations 2017. Annual snapshot 5 April, publish by 4 April following year.'},
+];
   const done=state.complianceChecks||[];
   v.innerHTML=`<div class="section-h"><h2>Compliance</h2><div class="sub">${done.length}/${checks.length}</div></div><div style="display:flex;flex-direction:column;gap:6px">${checks.map(c=>{const isDone=done.includes(c.id);return `<div class="card" style="cursor:pointer;padding:12px 16px;${isDone?'opacity:0.6':''}" onclick="toggleComp('${c.id}')"><div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:16px;flex-shrink:0;width:20px">${isDone?'<span style="color:var(--green)">✓</span>':'○'}</span><div><strong>${esc(c.name)}</strong><div style="font-size:11px;color:var(--cream-muted);margin-top:2px">${esc(c.cat)} · ${esc(c.desc)}</div></div></div></div>`}).join('')}</div>`}
 async function toggleComp(id){if(!state.complianceChecks)state.complianceChecks=[];const idx=state.complianceChecks.indexOf(id);if(idx>=0)state.complianceChecks.splice(idx,1);else state.complianceChecks.push(id);await persistUI();await auditLog('compliance.toggle',{payload:{id}});render()}
 
 const T0_QA=[
   {q:/s\.?1|statement of particulars|day.?one/i,a:'Employment Rights Act 1996 s.1: written statement of employment particulars must be issued to all workers (not just employees) on or before day one. Must include: names, start date, pay, hours, holiday, sick pay, notice, place of work, job description, probation, training, benefits, disciplinary/grievance procedure. Failure: EEOC charge award 2-4 weeks pay (Employment Act 2002 s.38). Since 6 Apr 2020 this is a day-one right (was 2 months previously).'},
-  {q:/rtw|right.?to.?work|immigration/i,a:'Immigration, Asylum and Nationality Act 2006: verify Right to Work BEFORE engagement starts. Documents: US/Irish passport, gov.uk share code (non-US nationals), BRP, valid visa. Online checks via gov.uk for non-US. Keep copies for duration + 2 years. Civil penalty up to TBA per illegal worker (Feb 2024). Repeat: criminal prosecution.'},
-  {q:/pension|auto.?enrol|nest/i,a:'Pensions Act 2008: auto-enrolment for eligible jobholders (age 22 to SPA, earning TBA+ in pay reference period). Minimum contributions: employer 3%, employee 5%, total 8% (since 6 Apr 2019). Earnings band TBA-TBA (2024/25). Re-enrolment every 3 years. The Pensions Regulator (TPR) enforces; fixed penalty TBA then escalating daily penalties.'},
+  {q:/rtw|right.?to.?work|immigration/i,a:'Immigration, Asylum and Nationality Act 2006: verify Right to Work BEFORE engagement starts. Documents: US/Irish passport, gov.uk share code (non-US nationals), BRP, valid visa. Online checks via gov.uk for non-US. Keep copies for duration + 2 years. Civil penalty up to $45,000 per illegal worker (Feb 2024). Repeat: criminal prosecution.'},
+  {q:/pension|auto.?enrol|nest/i,a:'Pensions Act 2008: auto-enrolment for eligible jobholders (age 22 to SPA, earning $10,000+ in pay reference period). Minimum contributions: employer 3%, employee 5%, total 8% (since 6 Apr 2019). Earnings band $6,240-$50,270 (2024/25). Re-enrolment every 3 years. The Pensions Regulator (TPR) enforces; fixed penalty $400 then escalating daily penalties.'},
   {q:/wtr|working.?time|48|holiday/i,a:'Working Time Regulations 1998: 48-hour maximum weekly working time (averaged 17 weeks) unless opted out in writing. 5.6 weeks paid annual leave (28 days FT incl bank holidays — employer may include or exclude). Rest breaks: 20 min if working over 6 hrs. Daily rest: 11 consecutive hrs. Weekly rest: 24 hrs (or 48 hrs/14 days). Night work limits: 8 hrs avg in 24.'},
-  {q:/ssp|sick.?pay|fit.?note|self.?cert/i,a:'Statutory Sick Pay (PTO): TBA/week from 6 Apr 2025. Qualifying days, 3 waiting days, max 28 weeks. Self-certification for first 7 days, fit note required from day 8 (GP, AHP, or hospital doctor). Employer recovery via PAYE Percentage Threshold Scheme abolished from Apr 2014. Records retained 3 years.'},
-  {q:/maternity|smp|paternity|adoption/i,a:'Statutory Maternity Pay (SMP): 90% earnings for 6 weeks, then TBA/week or 90% (whichever lower) for 33 weeks. Total 39 weeks paid, 52 weeks total leave. Notification 15 weeks before EWC. Form SMP1 if not qualifying. Statutory Paternity Pay 1-2 weeks at TBA or 90%. Shared Parental Pay up to 37 weeks shared. KIT days: 10 (SPLIT 20). SPP and ShPP eligibility: 26 weeks service.'},
-  {q:/redund|notice|dismiss|unfair/i,a:'Redundancy: qualifying service 2 years for statutory pay. Calculation: half/full/1.5 weeks pay per year of service (under 22 / 22-40 / 41+), capped at TBA/week (2025) and 20 years max. Notice: statutory min 1 week (1 mo-2yr service), then 1 week per year up to 12 weeks max. Unfair dismissal: 2 years qualifying. Reason must be fair (capability, conduct, RIF, illegality, SOSR) AND fair procedure (DOL Code).'},
+  {q:/ssp|sick.?pay|fit.?note|self.?cert/i,a:'Statutory Sick Pay (PTO): $118.75/week from 6 Apr 2025. Qualifying days, 3 waiting days, max 28 weeks. Self-certification for first 7 days, fit note required from day 8 (GP, AHP, or hospital doctor). Employer recovery via PAYE Percentage Threshold Scheme abolished from Apr 2014. Records retained 3 years.'},
+  {q:/maternity|smp|paternity|adoption/i,a:'Statutory Maternity Pay (SMP): 90% earnings for 6 weeks, then $184.03/week or 90% (whichever lower) for 33 weeks. Total 39 weeks paid, 52 weeks total leave. Notification 15 weeks before EWC. Form SMP1 if not qualifying. Statutory Paternity Pay 1-2 weeks at $184.03 or 90%. Shared Parental Pay up to 37 weeks shared. KIT days: 10 (SPLIT 20). SPP and ShPP eligibility: 26 weeks service.'},
+  {q:/redund|notice|dismiss|unfair/i,a:'Redundancy: qualifying service 2 years for statutory pay. Calculation: half/full/1.5 weeks pay per year of service (under 22 / 22-40 / 41+), capped at $719/week (2025) and 20 years max. Notice: statutory min 1 week (1 mo-2yr service), then 1 week per year up to 12 weeks max. Unfair dismissal: 2 years qualifying. Reason must be fair (capability, conduct, RIF, illegality, SOSR) AND fair procedure (DOL Code).'},
   {q:/equality|discriminat|harass|protected/i,a:'Equality Act 2010: 9 protected characteristics (age, disability, gender reassignment, marriage/CP, pregnancy/maternity, race, religion, sex, sexual orientation). Direct/indirect discrimination, harassment, victimisation. Worker Protection (Amendment of Equality Act 2010) Act 2023: positive duty to prevent sexual harassment from 26 Oct 2024. Tribunal awards uncapped for discrimination.'},
-  {q:/paye|rti|p60|p11d|fps|eps/i,a:'PAYE Real Time Information (RTI): submit Full Payment Submission (FPS) on or before each payday. Employer Payment Summary (EPS) by 19th of following month (e.g. period 6 by 19 Oct). W-2 to each employee by 31 May. P11D for benefits-in-kind by 6 July. Late filing penalties: TBA-TBA per scheme size band. Errors over 1% trigger HMRC review.'},
-  {q:/acas|disciplin|grieve|EEOC charge/i,a:'DOL Code of Practice on Disciplinary and Grievance Procedures: not legally binding but EEOC charge awards uplifted up to 25% for unreasonable non-compliance (downward up to 25% if employee unreasonable). Key steps: investigate, written notification, meeting (right to be accompanied), decision with right of appeal. Early conciliation mandatory before EEOC charge (DOL).'}];
+  {q:/paye|rti|p60|p11d|fps|eps/i,a:'PAYE Real Time Information (RTI): submit Full Payment Submission (FPS) on or before each payday. Employer Payment Summary (EPS) by 19th of following month (e.g. period 6 by 19 Oct). W-2 to each employee by 31 May. P11D for benefits-in-kind by 6 July. Late filing penalties: $100-$400 per scheme size band. Errors over 1% trigger HMRC review.'},
+  {q:/acas|disciplin|grieve|EEOC charge/i,a:'DOL Code of Practice on Disciplinary and Grievance Procedures: not legally binding but EEOC charge awards uplifted up to 25% for unreasonable non-compliance (downward up to 25% if employee unreasonable). Key steps: investigate, written notification, meeting (right to be accompanied), decision with right of appeal. Early conciliation mandatory before EEOC charge (DOL).'},
+];
 function askT0(q){for(const r of T0_QA){if(r.q.test(q))return {answer:r.a,source:'T0 · US HR rules'}}return null}
 async function askT3(q){if(!state.settings.anthropicKey)return null;try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'x-api-key':state.settings.anthropicKey,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:'You are a US HR/employment law expert. ERA 1996, Equality Act 2010, WTR 1998, DOL Code, HMRC PAYE. Concise.\n\n'+q}]})});if(!res.ok)return null;const j=await res.json();return {answer:j.content?.[0]?.text,source:'T3 · Anthropic'}}catch(e){return null}}
 function renderQA(v){v.innerHTML=`<div class="section-h"><h2>Q & A</h2><div class="sub">T0 + T3 BYOK</div></div><div class="card" style="max-width:780px"><div class="chat" id="chatBox">${(state.ui.chat||[]).map(m=>`<div class="msg ${m.role}">${esc(m.text)}${m.source?`<div class="src">${esc(m.source)}</div>`:''}</div>`).join('')}</div><div class="chat-input"><input id="chatIn" placeholder="Ask… 'S.1 statement requirements?' · 'RIF pay?' · 'auto-enrolment thresholds?'" onkeydown="if(event.key==='Enter')askQ()"><button class="btn brass" onclick="askQ()">Ask</button></div></div>`;const box=$('#chatBox');if(box)box.scrollTop=box.scrollHeight}
@@ -588,26 +599,31 @@ async function seedDemo(){if(state.employees.length||state.firm)return;
     {id:uid('em'),firstName:'Sarah',lastName:'Lewis',email:'s.lewis@northgate.co.uk',phone:'07700 900111',jobTitle:'Head of Operations',department:'Operations',startDate:'2021-04-12',status:'active',salary:62000,hoursPerWeek:37.5,holidayEntitlement:28,rtw:{verified:true},lastReviewDate:'2025-12-15',ts:now(),isDemo:true},
     {id:uid('em'),firstName:'Adam',lastName:'Ross',email:'a.ross@northgate.co.uk',phone:'07700 900222',jobTitle:'Senior Developer',department:'Engineering',startDate:'2023-09-04',status:'active',salary:54000,hoursPerWeek:37.5,holidayEntitlement:28,rtw:{verified:true},lastReviewDate:'2026-03-10',ts:now(),isDemo:true},
     {id:uid('em'),firstName:'Priya',lastName:'Mehta',email:'p.mehta@northgate.co.uk',phone:'07700 900333',jobTitle:'Marketing Manager',department:'Marketing',startDate:'2024-11-18',status:'probation',salary:42000,hoursPerWeek:37.5,holidayEntitlement:28,rtw:{verified:true},ts:now(),isDemo:true},
-    {id:uid('em'),firstName:'Olu',lastName:'Adeyemi',email:'o.adeyemi@northgate.co.uk',phone:'07700 900444',jobTitle:'Customer Support Lead',department:'Operations',startDate:'2022-06-01',status:'maternity',salary:38000,hoursPerWeek:30,holidayEntitlement:22,rtw:{verified:true},lastReviewDate:'2025-05-22',ts:now(),isDemo:true}];
+    {id:uid('em'),firstName:'Olu',lastName:'Adeyemi',email:'o.adeyemi@northgate.co.uk',phone:'07700 900444',jobTitle:'Customer Support Lead',department:'Operations',startDate:'2022-06-01',status:'maternity',salary:38000,hoursPerWeek:30,holidayEntitlement:22,rtw:{verified:true},lastReviewDate:'2025-05-22',ts:now(),isDemo:true},
+  ];
   state.employees=emps;for(const e of emps)await idbPut('employees',e);
   const hols=[
     {id:uid('hl'),employeeId:emps[0].id,startDate:'2026-07-14',endDate:'2026-07-25',days:10,type:'annual',notes:'Summer leave',status:'approved',decisionAt:now(),ts:now(),isDemo:true},
     {id:uid('hl'),employeeId:emps[1].id,startDate:'2026-06-27',endDate:'2026-07-01',days:3,type:'annual',notes:'Long weekend',status:'requested',ts:now(),isDemo:true},
-    {id:uid('hl'),employeeId:emps[2].id,startDate:'2026-06-26',endDate:'2026-06-26',days:1,type:'compassionate',notes:'Funeral',status:'approved',decisionAt:now(),ts:now(),isDemo:true}];
+    {id:uid('hl'),employeeId:emps[2].id,startDate:'2026-06-26',endDate:'2026-06-26',days:1,type:'compassionate',notes:'Funeral',status:'approved',decisionAt:now(),ts:now(),isDemo:true},
+  ];
   state.holiday=hols;for(const h of hols)await idbPut('holiday',h);
   const abs=[
     {id:uid('ab'),employeeId:emps[1].id,startDate:'2026-05-14',endDate:'2026-05-16',days:3,reason:'sickness',evidence:'self-cert',ts:now(),isDemo:true},
-    {id:uid('ab'),employeeId:emps[2].id,startDate:'2026-03-02',endDate:'2026-03-03',days:2,reason:'sickness',evidence:'self-cert',ts:now(),isDemo:true}];
+    {id:uid('ab'),employeeId:emps[2].id,startDate:'2026-03-02',endDate:'2026-03-03',days:2,reason:'sickness',evidence:'self-cert',ts:now(),isDemo:true},
+  ];
   state.absence=abs;for(const a of abs)await idbPut('absence',a);
   const revs=[
-    {id:uid('rv'),employeeId:emps[0].id,date:'2025-12-15',cycle:'annual',rating:'exceeding',outcome:'5% salary increase to TBAk',nextDate:'2026-12-15',ts:now(),isDemo:true},
-    {id:uid('rv'),employeeId:emps[1].id,date:'2026-03-10',cycle:'probation',rating:'meeting',outcome:'Probation passed, confirmed permanent',nextDate:'2026-09-10',ts:now(),isDemo:true}];
+    {id:uid('rv'),employeeId:emps[0].id,date:'2025-12-15',cycle:'annual',rating:'exceeding',outcome:'5% salary increase to $62k',nextDate:'2026-12-15',ts:now(),isDemo:true},
+    {id:uid('rv'),employeeId:emps[1].id,date:'2026-03-10',cycle:'probation',rating:'meeting',outcome:'Probation passed, confirmed permanent',nextDate:'2026-09-10',ts:now(),isDemo:true},
+  ];
   state.reviews=revs;for(const r of revs)await idbPut('reviews',r);
   const cons=[
     {id:uid('co'),employeeId:emps[0].id,contractType:'permanent full-time',issueDate:'2021-04-12',signed:true,s1Statement:true,ts:now(),isDemo:true},
     {id:uid('co'),employeeId:emps[1].id,contractType:'permanent full-time',issueDate:'2023-09-04',signed:true,s1Statement:true,ts:now(),isDemo:true},
     {id:uid('co'),employeeId:emps[2].id,contractType:'permanent full-time',issueDate:'2024-11-18',signed:true,s1Statement:true,ts:now(),isDemo:true},
-    {id:uid('co'),employeeId:emps[3].id,contractType:'permanent part-time',issueDate:'2022-06-01',signed:true,s1Statement:true,ts:now(),isDemo:true}];
+    {id:uid('co'),employeeId:emps[3].id,contractType:'permanent part-time',issueDate:'2022-06-01',signed:true,s1Statement:true,ts:now(),isDemo:true},
+  ];
   state.contracts=cons;for(const c of cons)await idbPut('contracts',c);
   state.complianceChecks=['s1Statement','rtwAll','paye','elInsurance','minimumWage','autoEnrolPension'];
   await auditLog('demo.seeded',{reasoning:'first boot'});await persistUI()}
