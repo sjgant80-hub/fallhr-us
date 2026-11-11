@@ -37,7 +37,7 @@ Run your HR from one HTML file. 8 tabs cover employees, holiday, absence, review
 
 ## Licence
 
-MIT · Simon Gant · prime 1009 · ◊·κ=1.
+MIT · Simon Gant.
 
 
 ## What this tool provides
